@@ -7,20 +7,24 @@ import Axios from "axios";
 
 const API_KEY = "fc07cbb2e877851d87c52bd6ac473321";
 
-export default class App extends React.Component {
+export default class extends React.Component {
   state = {
     isLoading: true
   };
-  getweather = async (latitude, longitude) => {
-    await fetch(
+  getWeather = async (latitude, longitude) => {
+    const {
+      data: {
+        main: { temp },
+        weather
+      }
+    } = await Axios.get(
       `http://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&APPID=${API_KEY}&units=metric`
-    )
-      .then(res => {
-        return res.json(); //Promise 반환
-      })
-      .then(json => {
-        console.log(json); // 서버에서 주는 json데이터가 출력 됨
-      });
+    );
+    this.setState({
+      isLoading: false,
+      condition: weather[0].main,
+      temp
+    });
   };
   getLocation = async () => {
     try {
@@ -28,19 +32,20 @@ export default class App extends React.Component {
       const {
         coords: { latitude, longitude }
       } = await Location.getCurrentPositionAsync();
-      this.getweather(latitude, longitude);
-      this.setState({ isLoading: false });
+      this.getWeather(latitude, longitude);
     } catch (error) {
-      console.log(error);
-      Alert.alert("What?", "Please accept request 😢");
+      Alert.alert("Can't find you.", "So sad");
     }
   };
   componentDidMount() {
-    this.getweather();
     this.getLocation();
   }
   render() {
-    const { isLoading } = this.state;
-    return isLoading ? <Loading /> : <Weather />;
+    const { isLoading, temp, condition } = this.state;
+    return isLoading ? (
+      <Loading />
+    ) : (
+      <Weather temp={Math.round(temp)} condition={condition} />
+    );
   }
 }
